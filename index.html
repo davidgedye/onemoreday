@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>One More Day</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            user-select: none;
+        }
+
+        .pushup-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .day-label {
+            font-size: 1rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .day-number {
+            font-size: 8rem;
+            font-weight: 700;
+            line-height: 1;
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .remaining {
+            font-size: 1.5rem;
+            margin-top: 10px;
+            color: #ccc;
+        }
+        .remaining.done {
+            color: #4ade80;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .custom-input {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .custom-input input {
+            width: 80px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .custom-input input::placeholder {
+            color: #666;
+        }
+        .custom-input input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        .custom-input .btn {
+            padding: 10px 16px;
+        }
+
+        .stats {
+            position: absolute;
+            bottom: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .stats .total {
+            font-size: 1.1rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .reset-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #444;
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 8px;
+        }
+        .reset-btn:hover {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <button class="reset-btn" id="reset-btn">Reset</button>
+
+    <svg class="pushup-icon" viewBox="0 0 100 60" fill="none">
+        <!-- Simplified pushup silhouette -->
+        <ellipse cx="15" cy="35" rx="8" ry="6" fill="currentColor" opacity="0.9"/>
+        <path d="M23 38 L75 45 Q80 46 82 42 L85 30 Q86 26 82 25 L78 24" stroke="currentColor" stroke-width="8" stroke-linecap="round" fill="none"/>
+        <circle cx="12" cy="28" r="7" fill="currentColor"/>
+        <path d="M25 50 L30 58 M65 52 L68 58" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+
+    <div class="day-label">Day</div>
+    <div class="day-number" id="day-number">1</div>
+    <div class="remaining" id="remaining">0 remaining</div>
+
+    <div class="button-row">
+        <button class="btn" data-add="1">+1</button>
+        <button class="btn" data-add="5">+5</button>
+        <button class="btn" data-add="10">+10</button>
+    </div>
+
+    <div class="custom-input">
+        <input type="number" id="custom-amount" placeholder="#" min="1">
+        <button class="btn" id="custom-add">Add</button>
+    </div>
+
+    <div class="stats">
+        <div>Today: <span id="today-count">0</span></div>
+        <div class="total">Year total: <span id="year-total">0</span></div>
+    </div>
+
+    <script>
+        // Calculate day of year (1-366)
+        function getDayOfYear() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 0);
+            const diff = now - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            return Math.floor(diff / oneDay);
+        }
+
+        // Get today's date as YYYY-MM-DD for comparison
+        function getTodayKey() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // Load state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('onemoreday');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            return {
+                lastDate: null,
+                todayCount: 0,
+                yearTotal: 0,
+                year: new Date().getFullYear()
+            };
+        }
+
+        // Save state to localStorage
+        function saveState(state) {
+            localStorage.setItem('onemoreday', JSON.stringify(state));
+        }
+
+        // Initialize or reset for new day/year
+        function initState() {
+            let state = loadState();
+            const today = getTodayKey();
+            const currentYear = new Date().getFullYear();
+
+            // Reset for new year
+            if (state.year !== currentYear) {
+                state = {
+                    lastDate: today,
+                    todayCount: 0,
+                    yearTotal: 0,
+                    year: currentYear
+                };
+            }
+            // Reset for new day
+            else if (state.lastDate !== today) {
+                state.lastDate = today;
+                state.todayCount = 0;
+            }
+
+            saveState(state);
+            return state;
+        }
+
+        // Update the display
+        function updateDisplay(state) {
+            const dayNum = getDayOfYear();
+            const remaining = Math.max(0, dayNum - state.todayCount);
+
+            document.getElementById('day-number').textContent = dayNum;
+            document.getElementById('today-count').textContent = state.todayCount;
+            document.getElementById('year-total').textContent = state.yearTotal.toLocaleString();
+
+            const remainingEl = document.getElementById('remaining');
+            if (remaining === 0) {
+                remainingEl.textContent = 'Done for today!';
+                remainingEl.classList.add('done');
+            } else {
+                remainingEl.textContent = `${remaining} remaining`;
+                remainingEl.classList.remove('done');
+            }
+        }
+
+        // Add pushups
+        function addPushups(count) {
+            if (count <= 0) return;
+
+            let state = loadState();
+            state.todayCount += count;
+            state.yearTotal += count;
+            saveState(state);
+            updateDisplay(state);
+        }
+
+        // Reset all data
+        function resetAll() {
+            if (confirm('Reset all data? This cannot be undone.')) {
+                localStorage.removeItem('onemoreday');
+                const state = initState();
+                updateDisplay(state);
+            }
+        }
+
+        // Event listeners
+        document.querySelectorAll('[data-add]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                addPushups(parseInt(btn.dataset.add));
+            });
+        });
+
+        document.getElementById('custom-add').addEventListener('click', () => {
+            const input = document.getElementById('custom-amount');
+            const value = parseInt(input.value);
+            if (value > 0) {
+                addPushups(value);
+                input.value = '';
+            }
+        });
+
+        document.getElementById('custom-amount').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('custom-add').click();
+            }
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', resetAll);
+
+        // Initialize
+        const state = initState();
+        updateDisplay(state);
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
