@@ -2,7 +2,7 @@
     "name": "One More Day",
     "short_name": "OMD",
     "description": "Track your daily pushup challenge - do N pushups on day N",
-    "start_url": "/",
+    "start_url": "./",
     "display": "standalone",
     "background_color": "#1a1a2e",
     "theme_color": "#1a1a2e",
