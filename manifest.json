@@ -1,6 +1,6 @@
 {
-    "name": "One More Day",
-    "short_name": "OMD",
+    "name": "Pushup Challenge",
+    "short_name": "Pushups",
     "description": "Track your daily pushup challenge - do N pushups on day N",
     "start_url": "./",
     "display": "standalone",
