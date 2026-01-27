@@ -1,9 +1,10 @@
-const CACHE_NAME = 'onemoreday-v1';
+const CACHE_NAME = 'onemoreday-v2';
 const ASSETS = [
     './',
     './index.html',
     './manifest.json',
-    './icon.svg'
+    './icon.svg',
+    './pushup.png'
 ];
 
 self.addEventListener('install', (event) => {
