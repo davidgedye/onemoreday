@@ -1,9 +1,9 @@
-const CACHE_NAME = 'onemoreday-v5';
+const CACHE_NAME = 'onemoreday-v6';
 const ASSETS = [
     './',
     './index.html',
     './manifest.json',
-    './icon.svg',
+    './icon-180.png',
     './pushup.png'
 ];
 
