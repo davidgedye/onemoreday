@@ -148,10 +148,15 @@
             margin-top: 4px;
         }
 
-        .reset-btn {
+        .top-buttons {
             position: absolute;
             top: 20px;
             right: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .top-btn {
             background: none;
             border: none;
             color: #444;
@@ -159,13 +164,16 @@
             cursor: pointer;
             padding: 8px;
         }
-        .reset-btn:hover {
+        .top-btn:hover {
             color: #666;
         }
     </style>
 </head>
 <body>
-    <button class="reset-btn" id="reset-btn">Reset</button>
+    <div class="top-buttons">
+        <button class="top-btn" id="catchup-btn">Catch Up</button>
+        <button class="top-btn" id="reset-btn">Reset</button>
+    </div>
 
     <div class="header">
         <img src="pushup.png" alt="Pushup" class="pushup-icon">
@@ -269,6 +277,19 @@
             }
         }
 
+        function catchUp() {
+            if (confirm('Mark all days as complete through today?')) {
+                const dayNum = getDayOfYear();
+                const requiredSoFar = dayNum * (dayNum + 1) / 2;
+                const state = {
+                    yearTotal: requiredSoFar,
+                    year: new Date().getFullYear()
+                };
+                saveState(state);
+                updateDisplay(state);
+            }
+        }
+
         // Event listeners
         document.getElementById('custom-add').addEventListener('click', () => {
             const input = document.getElementById('custom-amount');
@@ -286,6 +307,7 @@
         });
 
         document.getElementById('reset-btn').addEventListener('click', resetAll);
+        document.getElementById('catchup-btn').addEventListener('click', catchUp);
 
         // Initialize
         const state = initState();
