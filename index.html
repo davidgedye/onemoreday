@@ -26,8 +26,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            padding: 40px 20px 20px;
             user-select: none;
         }
 
@@ -64,13 +63,16 @@
             background-clip: text;
         }
 
-        .remaining {
-            font-size: 1.5rem;
+        .day-info {
+            font-size: 1.2rem;
             margin-top: 10px;
-            color: #ccc;
+            color: #888;
         }
-        .remaining.done {
-            color: #4ade80;
+
+        .day-number.done {
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
         }
 
         .btn {
@@ -153,9 +155,9 @@
     <img src="pushup.png" alt="Pushup" class="pushup-icon">
     <h1 class="title">Pushup Challenge</h1>
 
-    <div class="day-label">Day</div>
-    <div class="day-number" id="day-number">1</div>
-    <div class="remaining" id="remaining">0 remaining</div>
+    <div class="day-label">Remaining today</div>
+    <div class="day-number" id="remaining-number">0</div>
+    <div class="day-info" id="day-info">on day 1</div>
 
     <div class="custom-input">
         <input type="number" id="custom-amount" placeholder="#" min="1">
@@ -234,18 +236,17 @@
             const previousDaysTotal = (dayNum - 1) * dayNum / 2;
             const yearTotal = previousDaysTotal + state.todayCount;
 
-            document.getElementById('day-number').textContent = dayNum;
-            document.getElementById('today-count').textContent = state.todayCount;
-            document.getElementById('year-total').textContent = yearTotal.toLocaleString();
-
-            const remainingEl = document.getElementById('remaining');
+            const remainingEl = document.getElementById('remaining-number');
+            remainingEl.textContent = remaining;
             if (remaining === 0) {
-                remainingEl.textContent = 'Done for today!';
                 remainingEl.classList.add('done');
             } else {
-                remainingEl.textContent = `${remaining} remaining`;
                 remainingEl.classList.remove('done');
             }
+
+            document.getElementById('day-info').textContent = `on day ${dayNum}`;
+            document.getElementById('today-count').textContent = state.todayCount;
+            document.getElementById('year-total').textContent = yearTotal.toLocaleString();
         }
 
         // Add pushups
