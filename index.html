@@ -26,8 +26,23 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px 20px;
+            padding: 20px;
             user-select: none;
+            height: 100%;
+        }
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .pushup-icon {
@@ -152,20 +167,23 @@
 <body>
     <button class="reset-btn" id="reset-btn">Reset</button>
 
-    <img src="pushup.png" alt="Pushup" class="pushup-icon">
-    <h1 class="title">Pushup Challenge</h1>
+    <div class="header">
+        <img src="pushup.png" alt="Pushup" class="pushup-icon">
+        <h1 class="title">Pushup Challenge</h1>
+    </div>
 
-    <div class="day-label">Remaining today</div>
-    <div class="day-number" id="remaining-number">0</div>
-    <div class="day-info" id="day-info">on day 1</div>
+    <div class="main">
+        <div class="day-label">Remaining today</div>
+        <div class="day-number" id="remaining-number">0</div>
+        <div class="day-info" id="day-info">on day 1</div>
 
-    <div class="custom-input">
-        <input type="number" id="custom-amount" placeholder="#" min="1">
-        <button class="btn" id="custom-add">Add</button>
+        <div class="custom-input">
+            <input type="number" id="custom-amount" placeholder="#" min="1">
+            <button class="btn" id="custom-add">Add</button>
+        </div>
     </div>
 
     <div class="stats">
-        <div>Today: <span id="today-count">0</span></div>
         <div class="total">Year total: <span id="year-total">0</span></div>
     </div>
 
@@ -245,7 +263,6 @@
             }
 
             document.getElementById('day-info').textContent = `on day ${dayNum}`;
-            document.getElementById('today-count').textContent = state.todayCount;
             document.getElementById('year-total').textContent = yearTotal.toLocaleString();
         }
 
