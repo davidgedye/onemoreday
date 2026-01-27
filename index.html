@@ -90,6 +90,12 @@
             background-clip: text;
         }
 
+        .day-number.ahead {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
         .btn {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -181,7 +187,7 @@
     </div>
 
     <div class="main">
-        <div class="day-label">Remaining today</div>
+        <div class="day-label" id="day-label">Remaining today</div>
         <div class="day-number" id="remaining-number">0</div>
         <div class="day-info" id="day-info">on day 1</div>
 
@@ -249,13 +255,27 @@
             const dayNum = getDayOfYear();
             // Required so far = 1+2+...+dayNum = dayNum*(dayNum+1)/2
             const requiredSoFar = dayNum * (dayNum + 1) / 2;
-            const remaining = Math.max(0, requiredSoFar - state.yearTotal);
+            const diff = requiredSoFar - state.yearTotal;
 
             const remainingEl = document.getElementById('remaining-number');
-            remainingEl.textContent = remaining;
-            if (remaining === 0) {
+            const labelEl = document.getElementById('day-label');
+
+            if (diff > 0) {
+                // Behind or on track
+                remainingEl.textContent = diff;
+                labelEl.textContent = 'Remaining today';
+                remainingEl.classList.remove('done', 'ahead');
+            } else if (diff === 0) {
+                // Exactly caught up
+                remainingEl.textContent = '0';
+                labelEl.textContent = 'Remaining today';
                 remainingEl.classList.add('done');
+                remainingEl.classList.remove('ahead');
             } else {
+                // Ahead
+                remainingEl.textContent = Math.abs(diff);
+                labelEl.textContent = 'Ahead';
+                remainingEl.classList.add('ahead');
                 remainingEl.classList.remove('done');
             }
 
