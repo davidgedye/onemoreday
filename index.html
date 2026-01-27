@@ -197,11 +197,6 @@
             return Math.floor(diff / oneDay);
         }
 
-        // Get today's date as YYYY-MM-DD for comparison
-        function getTodayKey() {
-            return new Date().toISOString().split('T')[0];
-        }
-
         // Load state from localStorage
         function loadState() {
             const saved = localStorage.getItem('onemoreday');
@@ -209,8 +204,7 @@
                 return JSON.parse(saved);
             }
             return {
-                lastDate: null,
-                todayCount: 0,
+                yearTotal: 0,
                 year: new Date().getFullYear()
             };
         }
@@ -220,39 +214,29 @@
             localStorage.setItem('onemoreday', JSON.stringify(state));
         }
 
-        // Initialize or reset for new day/year
+        // Initialize or reset for new year
         function initState() {
             let state = loadState();
-            const today = getTodayKey();
             const currentYear = new Date().getFullYear();
 
             // Reset for new year
             if (state.year !== currentYear) {
                 state = {
-                    lastDate: today,
-                    todayCount: 0,
+                    yearTotal: 0,
                     year: currentYear
                 };
-            }
-            // Reset for new day
-            else if (state.lastDate !== today) {
-                state.lastDate = today;
-                state.todayCount = 0;
+                saveState(state);
             }
 
-            saveState(state);
             return state;
         }
 
         // Update the display
         function updateDisplay(state) {
             const dayNum = getDayOfYear();
-            const remaining = Math.max(0, dayNum - state.todayCount);
-
-            // Year total = sum of all previous days (assumed complete) + today's count
-            // Gauss' formula: 1+2+...+(n-1) = (n-1)*n/2
-            const previousDaysTotal = (dayNum - 1) * dayNum / 2;
-            const yearTotal = previousDaysTotal + state.todayCount;
+            // Required so far = 1+2+...+dayNum = dayNum*(dayNum+1)/2
+            const requiredSoFar = dayNum * (dayNum + 1) / 2;
+            const remaining = Math.max(0, requiredSoFar - state.yearTotal);
 
             const remainingEl = document.getElementById('remaining-number');
             remainingEl.textContent = remaining;
@@ -263,7 +247,7 @@
             }
 
             document.getElementById('day-info').textContent = `on day ${dayNum}`;
-            document.getElementById('year-total').textContent = yearTotal.toLocaleString();
+            document.getElementById('year-total').textContent = state.yearTotal.toLocaleString();
         }
 
         // Add pushups
@@ -271,7 +255,7 @@
             if (count <= 0) return;
 
             let state = loadState();
-            state.todayCount += count;
+            state.yearTotal += count;
             saveState(state);
             updateDisplay(state);
         }
