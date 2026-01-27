@@ -34,7 +34,7 @@
         .pushup-icon {
             width: 200px;
             height: auto;
-            margin-bottom: 10px;
+            margin-bottom: -10px;
             filter: invert(1);
             mix-blend-mode: lighten;
         }
@@ -43,7 +43,7 @@
             font-size: 1.4rem;
             font-weight: 400;
             color: #888;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             letter-spacing: 1px;
         }
 
@@ -71,12 +71,6 @@
         }
         .remaining.done {
             color: #4ade80;
-        }
-
-        .button-row {
-            display: flex;
-            gap: 12px;
-            margin-top: 30px;
         }
 
         .btn {
@@ -162,12 +156,6 @@
     <div class="day-label">Day</div>
     <div class="day-number" id="day-number">1</div>
     <div class="remaining" id="remaining">0 remaining</div>
-
-    <div class="button-row">
-        <button class="btn" data-add="1">+1</button>
-        <button class="btn" data-add="5">+5</button>
-        <button class="btn" data-add="10">+10</button>
-    </div>
 
     <div class="custom-input">
         <input type="number" id="custom-amount" placeholder="#" min="1">
@@ -280,12 +268,6 @@
         }
 
         // Event listeners
-        document.querySelectorAll('[data-add]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                addPushups(parseInt(btn.dataset.add));
-            });
-        });
-
         document.getElementById('custom-add').addEventListener('click', () => {
             const input = document.getElementById('custom-amount');
             const value = parseInt(input.value);
