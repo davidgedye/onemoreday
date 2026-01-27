@@ -209,7 +209,12 @@
         function loadState() {
             const saved = localStorage.getItem('onemoreday');
             if (saved) {
-                return JSON.parse(saved);
+                const state = JSON.parse(saved);
+                // Handle old format or missing yearTotal
+                if (typeof state.yearTotal !== 'number') {
+                    state.yearTotal = 0;
+                }
+                return state;
             }
             return {
                 yearTotal: 0,
