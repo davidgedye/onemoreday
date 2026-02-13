@@ -43,11 +43,11 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            margin-top: 100px;
+            margin-top: 50px;
         }
 
         .pushup-icon {
-            width: 200px;
+            width: 150px;
             height: auto;
             margin-bottom: -10px;
             filter: invert(1);
@@ -58,7 +58,7 @@
             font-size: 1.4rem;
             font-weight: 400;
             color: #888;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             letter-spacing: 1px;
         }
 
@@ -70,7 +70,7 @@
         }
 
         .day-number {
-            font-size: 8rem;
+            font-size: 5rem;
             font-weight: 700;
             line-height: 1;
             background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
@@ -178,7 +178,7 @@
         .gauge-container {
             width: 100%;
             max-width: 500px;
-            margin-bottom: -30px;
+            margin-bottom: -40px;
         }
         .gauge-container svg {
             width: 100%;
@@ -333,21 +333,13 @@
             // Layer 5: Today's thick arc — only show when working on today (N or fewer remaining)
             const todayRadius = dayNum + todayGap;
             const todayBorder = 2;
+            const todayGray = '#666';
             const showTodayArc = dayNum >= 1 && dayNum <= 365 && lastComplete >= dayNum - 1;
             if (showTodayArc) {
                 if (lastComplete >= dayNum) {
-                    // Caught up or ahead — today fully green
-                    parts.push(strokeArc(todayRadius, 0, 1, '#4ade80', todayThickness));
+                    parts.push(strokeArc(todayRadius, 0, 1, todayGray, todayThickness));
                 } else if (partialDay === dayNum && partialAmount > 0) {
-                    // Actively working on today — partial green, rest red outline
-                    parts.push(strokeArc(todayRadius - todayThickness / 2 + todayBorder / 2, partialFraction, 1, '#e94560', todayBorder));
-                    parts.push(strokeArc(todayRadius + todayThickness / 2 - todayBorder / 2, partialFraction, 1, '#e94560', todayBorder));
-                    // Green completed portion (drawn last so it's on top)
-                    parts.push(strokeArc(todayRadius, 0, partialFraction, '#4ade80', todayThickness));
-                } else {
-                    // Today not started yet — red outline over gray background
-                    parts.push(strokeArc(todayRadius - todayThickness / 2 + todayBorder / 2, 0, 1, '#e94560', todayBorder));
-                    parts.push(strokeArc(todayRadius + todayThickness / 2 - todayBorder / 2, 0, 1, '#e94560', todayBorder));
+                    parts.push(strokeArc(todayRadius, 0, partialFraction, todayGray, todayThickness));
                 }
             }
 
