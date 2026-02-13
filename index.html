@@ -42,7 +42,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            margin-top: 150px;
         }
 
         .pushup-icon {
@@ -173,6 +174,17 @@
         .top-btn:hover {
             color: #666;
         }
+
+        .gauge-container {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: -30px;
+        }
+        .gauge-container svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -184,6 +196,10 @@
     <div class="header">
         <img src="pushup.png" alt="Pushup" class="pushup-icon">
         <h1 class="title">Pushup Challenge</h1>
+    </div>
+
+    <div class="gauge-container">
+        <svg id="gauge-svg" viewBox="-370 -370 740 375" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
     <div class="main">
@@ -250,6 +266,87 @@
             return state;
         }
 
+        // Generate a stroked arc path (for the thick "today" arc)
+        function strokeArc(radius, startFrac, endFrac, color, width) {
+            // Semicircle: fraction 0 = left end (angle π), fraction 1 = right end (angle 0)
+            const startAngle = Math.PI * (1 - startFrac);
+            const endAngle = Math.PI * (1 - endFrac);
+
+            const x1 = radius * Math.cos(startAngle);
+            const y1 = -radius * Math.sin(startAngle);
+            const x2 = radius * Math.cos(endAngle);
+            const y2 = -radius * Math.sin(endAngle);
+
+            const largeArc = (startAngle - endAngle) > Math.PI ? 1 : 0;
+
+            return `<path d="M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${radius} ${radius} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="butt"/>`;
+        }
+
+        // Generate a filled semicircle wedge from center to radius
+        function filledSemi(radius, color) {
+            return `<path d="M -${radius} 0 A ${radius} ${radius} 0 0 1 ${radius} 0 Z" fill="${color}"/>`;
+        }
+
+        // Render the gas-gauge SVG
+        function renderGauge(state) {
+            const dayNum = getDayOfYear();
+            const yearTotal = state.yearTotal;
+            const todayThickness = 8;
+
+            // Find the fill watermark: last day fully "paid for" by yearTotal
+            let lastComplete = 0;
+            let cumulative = 0;
+            for (let d = 1; d <= 365; d++) {
+                if (cumulative + d <= yearTotal) {
+                    cumulative += d;
+                    lastComplete = d;
+                } else {
+                    break;
+                }
+            }
+
+            const partialDay = lastComplete + 1;
+            const partialAmount = yearTotal - cumulative;
+            const partialFraction = partialDay <= 365 ? partialAmount / partialDay : 0;
+
+            const parts = [];
+
+            // Layer 1: Gray filled semicircle — full year background
+            parts.push(filledSemi(365, '#333'));
+
+            // Layer 2: Red filled semicircle — all past/today days
+            if (dayNum > 0) {
+                parts.push(filledSemi(dayNum, '#e94560'));
+            }
+
+            // Layer 3: Green filled semicircle — all completed days
+            if (lastComplete > 0) {
+                parts.push(filledSemi(lastComplete, '#4ade80'));
+            }
+
+            // Layer 4: If partially filling a day before today, draw that thin partial arc
+            if (partialAmount > 0 && partialDay < dayNum && partialDay <= 365) {
+                parts.push(strokeArc(partialDay, 0, partialFraction, '#4ade80', 1));
+            }
+
+            // Layer 5: Today's thick arc
+            if (dayNum >= 1 && dayNum <= 365) {
+                if (lastComplete >= dayNum) {
+                    // Caught up or ahead — today fully green
+                    parts.push(strokeArc(dayNum, 0, 1, '#4ade80', todayThickness));
+                } else if (partialDay === dayNum && partialAmount > 0) {
+                    // Actively working on today — partial green, rest red
+                    parts.push(strokeArc(dayNum, 0, partialFraction, '#4ade80', todayThickness));
+                    parts.push(strokeArc(dayNum, partialFraction, 1, '#e94560', todayThickness));
+                } else {
+                    // Behind — today fully red
+                    parts.push(strokeArc(dayNum, 0, 1, '#e94560', todayThickness));
+                }
+            }
+
+            document.getElementById('gauge-svg').innerHTML = parts.join('\n');
+        }
+
         // Update the display
         function updateDisplay(state) {
             const dayNum = getDayOfYear();
@@ -281,6 +378,8 @@
 
             document.getElementById('day-info').textContent = `on day ${dayNum}`;
             document.getElementById('year-total').textContent = state.yearTotal.toLocaleString();
+
+            renderGauge(state);
         }
 
         // Add pushups
@@ -336,6 +435,10 @@
 
         // Initialize
         const state = initState();
+        // TEMP PREVIEW: simulate halfway through today
+        const _day = getDayOfYear();
+        const _requiredYesterday = (_day - 1) * _day / 2;
+        state.yearTotal = _requiredYesterday + Math.floor(_day / 2);
         updateDisplay(state);
 
         // Register service worker
