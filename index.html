@@ -43,7 +43,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            margin-top: 50px;
+            margin-top: 70px;
         }
 
         .pushup-icon {
@@ -434,9 +434,6 @@
 
         // Initialize
         const state = initState();
-        // TEMP PREVIEW: 8 remaining today
-        const _day = getDayOfYear();
-        state.yearTotal = _day * (_day + 1) / 2 - 8;
         updateDisplay(state);
 
         // Register service worker
