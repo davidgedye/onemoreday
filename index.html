@@ -43,7 +43,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            margin-top: 150px;
+            margin-top: 100px;
         }
 
         .pushup-icon {
@@ -199,7 +199,7 @@
     </div>
 
     <div class="gauge-container">
-        <svg id="gauge-svg" viewBox="-370 -370 740 375" xmlns="http://www.w3.org/2000/svg"></svg>
+        <svg id="gauge-svg" viewBox="-410 -410 820 415" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
     <div class="main">
@@ -291,7 +291,8 @@
         function renderGauge(state) {
             const dayNum = getDayOfYear();
             const yearTotal = state.yearTotal;
-            const todayThickness = 8;
+            const todayThickness = 20;
+            const todayGap = 20;
 
             // Find the fill watermark: last day fully "paid for" by yearTotal
             let lastComplete = 0;
@@ -314,9 +315,9 @@
             // Layer 1: Gray filled semicircle — full year background
             parts.push(filledSemi(365, '#333'));
 
-            // Layer 2: Red filled semicircle — all past/today days
-            if (dayNum > 0) {
-                parts.push(filledSemi(dayNum, '#e94560'));
+            // Layer 2: Red filled semicircle — all past days (exclude today, handled by thick arc)
+            if (dayNum > 1) {
+                parts.push(filledSemi(dayNum - 1, '#e94560'));
             }
 
             // Layer 3: Green filled semicircle — all completed days
@@ -329,18 +330,24 @@
                 parts.push(strokeArc(partialDay, 0, partialFraction, '#4ade80', 1));
             }
 
-            // Layer 5: Today's thick arc
-            if (dayNum >= 1 && dayNum <= 365) {
+            // Layer 5: Today's thick arc — only show when working on today (N or fewer remaining)
+            const todayRadius = dayNum + todayGap;
+            const todayBorder = 2;
+            const showTodayArc = dayNum >= 1 && dayNum <= 365 && lastComplete >= dayNum - 1;
+            if (showTodayArc) {
                 if (lastComplete >= dayNum) {
                     // Caught up or ahead — today fully green
-                    parts.push(strokeArc(dayNum, 0, 1, '#4ade80', todayThickness));
+                    parts.push(strokeArc(todayRadius, 0, 1, '#4ade80', todayThickness));
                 } else if (partialDay === dayNum && partialAmount > 0) {
-                    // Actively working on today — partial green, rest red
-                    parts.push(strokeArc(dayNum, 0, partialFraction, '#4ade80', todayThickness));
-                    parts.push(strokeArc(dayNum, partialFraction, 1, '#e94560', todayThickness));
+                    // Actively working on today — partial green, rest red outline
+                    parts.push(strokeArc(todayRadius - todayThickness / 2 + todayBorder / 2, partialFraction, 1, '#e94560', todayBorder));
+                    parts.push(strokeArc(todayRadius + todayThickness / 2 - todayBorder / 2, partialFraction, 1, '#e94560', todayBorder));
+                    // Green completed portion (drawn last so it's on top)
+                    parts.push(strokeArc(todayRadius, 0, partialFraction, '#4ade80', todayThickness));
                 } else {
-                    // Behind — today fully red
-                    parts.push(strokeArc(dayNum, 0, 1, '#e94560', todayThickness));
+                    // Today not started yet — red outline over gray background
+                    parts.push(strokeArc(todayRadius - todayThickness / 2 + todayBorder / 2, 0, 1, '#e94560', todayBorder));
+                    parts.push(strokeArc(todayRadius + todayThickness / 2 - todayBorder / 2, 0, 1, '#e94560', todayBorder));
                 }
             }
 
@@ -435,10 +442,9 @@
 
         // Initialize
         const state = initState();
-        // TEMP PREVIEW: simulate halfway through today
+        // TEMP PREVIEW: 8 remaining today
         const _day = getDayOfYear();
-        const _requiredYesterday = (_day - 1) * _day / 2;
-        state.yearTotal = _requiredYesterday + Math.floor(_day / 2);
+        state.yearTotal = _day * (_day + 1) / 2 - 8;
         updateDisplay(state);
 
         // Register service worker
