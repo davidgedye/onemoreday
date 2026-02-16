@@ -331,13 +331,13 @@
                 parts.push(strokeArc(partialDay, 0, partialFraction, '#4ade80', 1));
             }
 
-            // Layer 5: Today's arc on the year boundary — green for done fraction of today
+            // Layer 5: Today's arc on the year boundary — yellow for done fraction of today
             const todayRadius = 365;
             if (partialDay === dayNum && partialAmount > 0) {
-                parts.push(strokeArc(todayRadius, 0, partialFraction, '#4ade80', todayThickness));
+                parts.push(strokeArc(todayRadius, 0, partialFraction, '#facc15', todayThickness));
             } else if (lastComplete >= dayNum) {
-                // Today fully done — full green arc at boundary
-                parts.push(strokeArc(todayRadius, 0, 1, '#4ade80', todayThickness));
+                // Today fully done — full yellow arc at boundary
+                parts.push(strokeArc(todayRadius, 0, 1, '#facc15', todayThickness));
             }
 
             document.getElementById('gauge-svg').innerHTML = parts.join('\n');
