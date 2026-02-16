@@ -85,14 +85,14 @@
             color: #888;
         }
 
-        .day-number.done {
-            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+        .day-number.on-track {
+            background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
             -webkit-background-clip: text;
             background-clip: text;
         }
 
         .day-number.ahead {
-            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
             -webkit-background-clip: text;
             background-clip: text;
         }
@@ -349,9 +349,9 @@
             let dayAccum = 0;
             for (let m = 0; m < 12; m++) {
                 const x = dayAccum + 1; // first day of month
-                parts.push(`<line x1="${x}" y1="-4" x2="${x}" y2="8" stroke="#666" stroke-width="1.5"/>`);
+                parts.push(`<line x1="${x}" y1="-4" x2="${x}" y2="8" stroke="#888" stroke-width="1.5"/>`);
                 if (monthLabels[m]) {
-                    parts.push(`<text x="${x}" y="22" text-anchor="middle" fill="#666" font-size="12" font-family="system-ui, sans-serif">${monthLabels[m]}</text>`);
+                    parts.push(`<text x="${x}" y="30" text-anchor="middle" fill="#888" font-size="24" font-family="system-ui, sans-serif">${monthLabels[m]}</text>`);
                 }
                 dayAccum += monthDays[m];
             }
@@ -369,23 +369,23 @@
             const remainingEl = document.getElementById('remaining-number');
             const labelEl = document.getElementById('day-label');
 
+            remainingEl.classList.remove('on-track', 'ahead');
             if (diff > 0) {
-                // Behind or on track
                 remainingEl.textContent = diff;
                 labelEl.textContent = 'Remaining today';
-                remainingEl.classList.remove('done', 'ahead');
+                if (diff <= dayNum) {
+                    // On track — remaining is within today's quota
+                    remainingEl.classList.add('on-track');
+                }
+                // else: behind — default red styling
             } else if (diff === 0) {
-                // Exactly caught up
                 remainingEl.textContent = '0';
                 labelEl.textContent = 'Remaining today';
-                remainingEl.classList.add('done');
-                remainingEl.classList.remove('ahead');
+                remainingEl.classList.add('ahead');
             } else {
-                // Ahead
                 remainingEl.textContent = Math.abs(diff);
                 labelEl.textContent = 'Ahead';
                 remainingEl.classList.add('ahead');
-                remainingEl.classList.remove('done');
             }
 
             document.getElementById('day-info').textContent = `on day ${dayNum}`;

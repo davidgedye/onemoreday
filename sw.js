@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onemoreday-v14';
+const CACHE_NAME = 'onemoreday-v15';
 const ASSETS = [
     './',
     './index.html',
