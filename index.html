@@ -10,6 +10,16 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-180.png">
     <style>
+        :root {
+            --c-red: #e94560;
+            --c-red-light: #ff6b6b;
+            --c-green: #4ade80;
+            --c-green-dark: #22c55e;
+            --c-yellow: #facc15;
+            --c-yellow-dark: #eab308;
+            --c-gray: #888;
+            --c-bg-dark: #333;
+        }
         * {
             margin: 0;
             padding: 0;
@@ -57,14 +67,14 @@
         .title {
             font-size: 1.4rem;
             font-weight: 400;
-            color: #888;
+            color: var(--c-gray);
             margin-bottom: 10px;
             letter-spacing: 1px;
         }
 
         .day-label {
             font-size: 1rem;
-            color: #888;
+            color: var(--c-gray);
             text-transform: uppercase;
             letter-spacing: 2px;
         }
@@ -73,7 +83,7 @@
             font-size: 5rem;
             font-weight: 700;
             line-height: 1;
-            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+            background: linear-gradient(135deg, var(--c-red) 0%, var(--c-red-light) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -82,17 +92,17 @@
         .day-info {
             font-size: 1.2rem;
             margin-top: 10px;
-            color: #888;
+            color: var(--c-gray);
         }
 
         .day-number.on-track {
-            background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+            background: linear-gradient(135deg, var(--c-yellow) 0%, var(--c-yellow-dark) 100%);
             -webkit-background-clip: text;
             background-clip: text;
         }
 
         .day-number.ahead {
-            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            background: linear-gradient(135deg, var(--c-green) 0%, var(--c-green-dark) 100%);
             -webkit-background-clip: text;
             background-clip: text;
         }
@@ -136,7 +146,7 @@
         }
         .custom-input input:focus {
             outline: none;
-            border-color: #e94560;
+            border-color: var(--c-red);
         }
         .custom-input .btn {
             padding: 10px 16px;
@@ -151,7 +161,7 @@
         }
         .stats .total {
             font-size: 1.1rem;
-            color: #888;
+            color: var(--c-gray);
             margin-top: 4px;
         }
 
@@ -199,7 +209,7 @@
     </div>
 
     <div class="gauge-container">
-        <svg id="gauge-svg" viewBox="-410 -410 820 445" xmlns="http://www.w3.org/2000/svg"></svg>
+        <svg id="gauge-svg" viewBox="-411 -411 822 446" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
     <div class="main">
@@ -218,15 +228,26 @@
     </div>
 
     <script>
-        // Calculate day of year (1-366)
+        // Read color palette from CSS custom properties (single source of truth)
+        const CS = getComputedStyle(document.documentElement);
+        const C_RED = CS.getPropertyValue('--c-red').trim();
+        const C_GREEN = CS.getPropertyValue('--c-green').trim();
+        const C_YELLOW = CS.getPropertyValue('--c-yellow').trim();
+        const C_GRAY = CS.getPropertyValue('--c-gray').trim();
+        const C_BG_DARK = CS.getPropertyValue('--c-bg-dark').trim();
+
+        // Days in the current year (leap-year aware)
+        const currentYear = new Date().getFullYear();
+        const daysInYear = (currentYear % 4 === 0 && (currentYear % 100 !== 0 || currentYear % 400 === 0)) ? 366 : 365;
+
+        // Calculate day of year (1-366), using UTC to avoid DST edge cases
         function getDayOfYear() {
             const urlDay = new URLSearchParams(location.search).get('day');
             if (urlDay !== null) return parseInt(urlDay);
             const now = new Date();
-            const start = new Date(now.getFullYear(), 0, 0);
-            const diff = now - start;
-            const oneDay = 1000 * 60 * 60 * 24;
-            return Math.floor(diff / oneDay);
+            const utcNow = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+            const utcJan1 = Date.UTC(now.getFullYear(), 0, 1);
+            return Math.floor((utcNow - utcJan1) / 86400000) + 1;
         }
 
         // Load state from localStorage
@@ -298,7 +319,7 @@
             // Find the fill watermark: last day fully "paid for" by yearTotal
             let lastComplete = 0;
             let cumulative = 0;
-            for (let d = 1; d <= 365; d++) {
+            for (let d = 1; d <= daysInYear; d++) {
                 if (cumulative + d <= yearTotal) {
                     cumulative += d;
                     lastComplete = d;
@@ -309,49 +330,47 @@
 
             const partialDay = lastComplete + 1;
             const partialAmount = yearTotal - cumulative;
-            const partialFraction = partialDay <= 365 ? partialAmount / partialDay : 0;
+            const partialFraction = partialDay <= daysInYear ? partialAmount / partialDay : 0;
 
             const parts = [];
 
             // Layer 1: Gray filled semicircle — full year background
-            parts.push(filledSemi(365, '#333'));
+            parts.push(filledSemi(daysInYear, C_BG_DARK));
 
             // Layer 2: Red filled semicircle — all past days (exclude today, handled by thick arc)
             if (dayNum > 1) {
-                parts.push(filledSemi(dayNum - 1, '#e94560'));
+                parts.push(filledSemi(dayNum - 1, C_RED));
             }
 
             // Layer 3: Green filled semicircle — all completed days
             if (lastComplete > 0) {
-                parts.push(filledSemi(lastComplete, '#4ade80'));
+                parts.push(filledSemi(lastComplete, C_GREEN));
             }
 
             // Layer 4: If partially filling a day before today, draw that thin partial arc
-            if (partialAmount > 0 && partialDay < dayNum && partialDay <= 365) {
-                parts.push(strokeArc(partialDay, 0, partialFraction, '#4ade80', 1));
+            if (partialAmount > 0 && partialDay < dayNum && partialDay <= daysInYear) {
+                parts.push(strokeArc(partialDay, 0, partialFraction, C_GREEN, 1));
             }
 
             // Layer 5: Today's arc on the year boundary — yellow for done fraction of today
-            const todayRadius = 365;
+            const todayRadius = daysInYear;
             if (partialDay === dayNum && partialAmount > 0) {
-                parts.push(strokeArc(todayRadius, 0, partialFraction, '#facc15', todayThickness));
+                parts.push(strokeArc(todayRadius, 0, partialFraction, C_YELLOW, todayThickness));
             } else if (lastComplete >= dayNum) {
                 // Today fully done — full yellow arc at boundary
-                parts.push(strokeArc(todayRadius, 0, 1, '#facc15', todayThickness));
+                parts.push(strokeArc(todayRadius, 0, 1, C_YELLOW, todayThickness));
             }
 
             // Layer 6: Month tick marks along the right-hand baseline
-            const year = new Date().getFullYear();
-            const monthDays = [31,
-                (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 29 : 28,
+            const monthDays = [31, daysInYear === 366 ? 29 : 28,
                 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
             const monthLabels = [null, null, 'Mar', null, null, 'Jun', null, null, 'Sep', null, null, 'Dec'];
             let dayAccum = 0;
             for (let m = 0; m < 12; m++) {
                 const x = dayAccum + 1; // first day of month
-                parts.push(`<line x1="${x}" y1="-4" x2="${x}" y2="8" stroke="#888" stroke-width="1.5"/>`);
+                parts.push(`<line x1="${x}" y1="-4" x2="${x}" y2="8" stroke="${C_GRAY}" stroke-width="1.5"/>`);
                 if (monthLabels[m]) {
-                    parts.push(`<text x="${x}" y="30" text-anchor="middle" fill="#888" font-size="24" font-family="system-ui, sans-serif">${monthLabels[m]}</text>`);
+                    parts.push(`<text x="${x}" y="30" text-anchor="middle" fill="${C_GRAY}" font-size="24" font-family="system-ui, sans-serif">${monthLabels[m]}</text>`);
                 }
                 dayAccum += monthDays[m];
             }
