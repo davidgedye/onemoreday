@@ -185,6 +185,65 @@
             color: #666;
         }
 
+        #history-view {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 100;
+            overflow: hidden;
+        }
+        #history-view.visible {
+            display: flex;
+        }
+        .history-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .history-title {
+            font-size: 1.1rem;
+            color: var(--c-gray);
+            letter-spacing: 2px;
+        }
+        .history-scroll {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        .history-table th {
+            text-align: right;
+            color: #555;
+            font-weight: 400;
+            padding: 6px 12px;
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            background: #1a1a2e;
+        }
+        .history-table th:first-child {
+            text-align: left;
+        }
+        .history-table td {
+            text-align: right;
+            padding: 10px 12px;
+            border-bottom: 1px solid #222;
+            color: #ccc;
+        }
+        .history-table td:first-child {
+            text-align: left;
+            color: var(--c-gray);
+        }
+        .done-met { color: var(--c-green) !important; }
+        .done-behind { color: var(--c-red) !important; }
+
         .gauge-container {
             width: 100%;
             max-width: 500px;
@@ -199,6 +258,7 @@
 </head>
 <body>
     <div class="top-buttons">
+        <button class="top-btn" id="history-btn">History</button>
         <button class="top-btn" id="catchup-btn">Catch Up</button>
         <button class="top-btn" id="reset-btn">Reset</button>
     </div>
@@ -225,6 +285,25 @@
 
     <div class="stats">
         <div class="total">Year total: <span id="year-total">0</span></div>
+    </div>
+
+    <div id="history-view">
+        <div class="history-header">
+            <button class="top-btn" id="history-back">← Back</button>
+            <span class="history-title">HISTORY</span>
+        </div>
+        <div class="history-scroll">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Expected</th>
+                        <th>Done</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -255,15 +334,14 @@
             const saved = localStorage.getItem('onemoreday');
             if (saved) {
                 const state = JSON.parse(saved);
-                // Handle old format or missing yearTotal
-                if (typeof state.yearTotal !== 'number') {
-                    state.yearTotal = 0;
-                }
+                if (typeof state.yearTotal !== 'number') state.yearTotal = 0;
+                if (!Array.isArray(state.log)) state.log = [];
                 return state;
             }
             return {
                 yearTotal: 0,
-                year: new Date().getFullYear()
+                year: new Date().getFullYear(),
+                log: []
             };
         }
 
@@ -419,6 +497,7 @@
 
             let state = loadState();
             state.yearTotal += count;
+            state.log.push({ count, ts: Date.now() });
             saveState(state);
             updateDisplay(state);
         }
@@ -445,7 +524,57 @@
             }
         }
 
+        // Day-of-year for an arbitrary local date
+        function dayOfYearFromDate(date) {
+            const utcDate = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+            const utcJan1 = Date.UTC(date.getFullYear(), 0, 1);
+            return Math.floor((utcDate - utcJan1) / 86400000) + 1;
+        }
+
+        function showHistory() {
+            renderHistory(loadState());
+            document.getElementById('history-view').classList.add('visible');
+        }
+
+        function showMain() {
+            document.getElementById('history-view').classList.remove('visible');
+        }
+
+        function renderHistory(state) {
+            const byDate = {};
+            for (const entry of state.log) {
+                const d = new Date(entry.ts);
+                const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                byDate[key] = (byDate[key] || 0) + entry.count;
+            }
+
+            // Walk dates ascending to compute running cumulative total
+            const dates = Object.keys(byDate).sort();
+            let cumDone = 0;
+            const rows = dates.map(key => {
+                const [y, m, day] = key.split('-').map(Number);
+                const date = new Date(y, m - 1, day);
+                const dayNum = dayOfYearFromDate(date);
+                const done = byDate[key];
+                cumDone += done;
+                const cumRequired = dayNum * (dayNum + 1) / 2;
+                const dateStr = date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                const doneClass = cumDone >= cumRequired ? 'done-met' : 'done-behind';
+                return `<tr>
+                    <td>${dateStr}</td>
+                    <td>${dayNum}</td>
+                    <td class="${doneClass}">${done}</td>
+                </tr>`;
+            }).reverse().join('');
+
+            document.getElementById('history-body').innerHTML = rows ||
+                '<tr><td colspan="3" style="text-align:center;color:#555;padding:20px;">No entries yet</td></tr>';
+        }
+
         // Event listeners
+        document.getElementById('history-btn').addEventListener('click', showHistory);
+        document.getElementById('history-back').addEventListener('click', showMain);
+
         document.getElementById('custom-add').addEventListener('click', () => {
             const input = document.getElementById('custom-amount');
             const value = parseInt(input.value);
