@@ -623,15 +623,12 @@
             saveState(state);
         }
         const urlEntry = urlParams.get('addentry');
-        if (urlEntry !== null) {
-            if (state.log.length === 0) {
-                const count = parseInt(urlEntry);
-                if (count > 0) {
-                    state.log.push({ count, ts: Date.now() });
-                    saveState(state);
-                }
+        if (urlEntry !== null && state.log.length === 0) {
+            const count = parseInt(urlEntry);
+            if (count > 0) {
+                state.log.push({ count, ts: Date.now() });
+                saveState(state);
             }
-            location.replace(location.pathname);
         }
         updateDisplay(state);
 
