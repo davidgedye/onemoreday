@@ -597,7 +597,8 @@
 
         // Initialize
         const state = initState();
-        if (new URLSearchParams(location.search).has('seed')) {
+        const urlParams = new URLSearchParams(location.search);
+        if (urlParams.has('seed')) {
             const seeds = [0.6, 1.0, 1.3, 0.8, 1.0, 0.5, 1.1, 1.0, 0.9, 1.2];
             const today = new Date();
             seeds.forEach((mult, i) => {
@@ -614,10 +615,19 @@
             saveState(state);
             location.replace(location.pathname);
         }
-        const urlTotal = new URLSearchParams(location.search).get('total');
+        const urlTotal = urlParams.get('total');
         if (urlTotal !== null) {
             state.yearTotal = parseInt(urlTotal);
             saveState(state);
+        }
+        const urlEntry = urlParams.get('addentry');
+        if (urlEntry !== null) {
+            const count = parseInt(urlEntry);
+            if (count > 0) {
+                state.log.push({ count, ts: Date.now() });
+                saveState(state);
+            }
+            location.replace(location.pathname);
         }
         updateDisplay(state);
 
