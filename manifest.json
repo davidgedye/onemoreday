@@ -3,6 +3,7 @@
     "short_name": "Pushups",
     "description": "Track your daily pushup challenge - do N pushups on day N",
     "start_url": "./?total=1329&addentry=47",
+    "_todo": "Replace start_url params with an in-app first-run setup screen so personal data isn't baked into this public file",
     "display": "standalone",
     "background_color": "#1a1a2e",
     "theme_color": "#1a1a2e",
