@@ -550,9 +550,11 @@
                 byDate[key] = (byDate[key] || 0) + entry.count;
             }
 
-            // Walk dates ascending to compute running cumulative total
+            // Walk dates ascending to compute running cumulative total.
+            // Seed with any pushups that predate the log (e.g. migrated from old version).
+            const logTotal = Object.values(byDate).reduce((a, b) => a + b, 0);
             const dates = Object.keys(byDate).sort();
-            let cumDone = 0;
+            let cumDone = state.yearTotal - logTotal;
             const rows = dates.map(key => {
                 const [y, m, day] = key.split('-').map(Number);
                 const date = new Date(y, m - 1, day);
