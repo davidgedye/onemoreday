@@ -244,6 +244,18 @@
         .done-met { color: var(--c-green) !important; }
         .done-behind { color: var(--c-red) !important; }
 
+        .history-footer {
+            display: flex;
+            gap: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #333;
+            justify-content: center;
+        }
+        .history-footer .top-btn {
+            font-size: 0.95rem;
+            color: #777;
+        }
+
         .gauge-container {
             width: 100%;
             max-width: 500px;
@@ -257,10 +269,6 @@
     </style>
 </head>
 <body>
-    <div class="top-buttons">
-        <button class="top-btn" id="catchup-btn">Catch Up</button>
-        <button class="top-btn" id="reset-btn">Reset</button>
-    </div>
     <div class="top-buttons" style="right:auto;left:20px;">
         <button class="top-btn" id="history-btn">History</button>
     </div>
@@ -305,6 +313,10 @@
                 </thead>
                 <tbody id="history-body"></tbody>
             </table>
+        </div>
+        <div class="history-footer">
+            <button class="top-btn" id="backup-btn">↓ Backup</button>
+            <button class="top-btn" id="restore-btn">↑ Restore</button>
         </div>
     </div>
 
@@ -505,24 +517,50 @@
             updateDisplay(state);
         }
 
-        // Reset all data
-        function resetAll() {
-            if (confirm('Reset all data? This cannot be undone.')) {
-                localStorage.removeItem('onemoreday');
-                const state = initState();
-                updateDisplay(state);
-            }
+        const BACKUP_VERSION = 1;
+
+        function exportBackup() {
+            const state = loadState();
+            const backup = { version: BACKUP_VERSION, ...state };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pushup-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
-        function catchUp() {
-            if (confirm('Mark all days as complete through today?')) {
-                const dayNum = getDayOfYear();
-                const requiredSoFar = dayNum * (dayNum + 1) / 2;
-                const state = loadState();
-                state.yearTotal = requiredSoFar;
-                saveState(state);
-                updateDisplay(state);
-            }
+        function importBackup() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,application/json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const backup = JSON.parse(ev.target.result);
+                        if (backup.version !== BACKUP_VERSION) {
+                            alert(`Unrecognised backup version (${backup.version}). Cannot restore.`);
+                            return;
+                        }
+                        if (typeof backup.yearTotal !== 'number' || !Array.isArray(backup.log)) {
+                            alert('Invalid backup file.');
+                            return;
+                        }
+                        const { version, ...state } = backup;
+                        saveState(state);
+                        updateDisplay(state);
+                        showMain();
+                    } catch {
+                        alert('Could not read backup file.');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
         }
 
         // Day-of-year for an arbitrary local date
@@ -593,25 +631,11 @@
             }
         });
 
-        document.getElementById('reset-btn').addEventListener('click', resetAll);
-        document.getElementById('catchup-btn').addEventListener('click', catchUp);
+        document.getElementById('backup-btn').addEventListener('click', exportBackup);
+        document.getElementById('restore-btn').addEventListener('click', importBackup);
 
         // Initialize
         const state = initState();
-        const urlParams = new URLSearchParams(location.search);
-        const urlTotal = urlParams.get('total');
-        if (urlTotal !== null && state.yearTotal === 0) {
-            state.yearTotal = parseInt(urlTotal);
-            saveState(state);
-        }
-        const urlEntry = urlParams.get('addentry');
-        if (urlEntry !== null && state.log.length === 0) {
-            const count = parseInt(urlEntry);
-            if (count > 0) {
-                state.log.push({ count, ts: Date.now() });
-                saveState(state);
-            }
-        }
         updateDisplay(state);
 
         // Register service worker
