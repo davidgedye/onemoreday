@@ -361,7 +361,8 @@
             if (state.year !== currentYear) {
                 state = {
                     yearTotal: 0,
-                    year: currentYear
+                    year: currentYear,
+                    log: []
                 };
                 saveState(state);
             }
@@ -517,10 +518,8 @@
             if (confirm('Mark all days as complete through today?')) {
                 const dayNum = getDayOfYear();
                 const requiredSoFar = dayNum * (dayNum + 1) / 2;
-                const state = {
-                    yearTotal: requiredSoFar,
-                    year: new Date().getFullYear()
-                };
+                const state = loadState();
+                state.yearTotal = requiredSoFar;
                 saveState(state);
                 updateDisplay(state);
             }
@@ -600,23 +599,6 @@
         // Initialize
         const state = initState();
         const urlParams = new URLSearchParams(location.search);
-        if (urlParams.has('seed') && state.log.length === 0) {
-            const seeds = [0.6, 1.0, 1.3, 0.8, 1.0, 0.5, 1.1, 1.0, 0.9, 1.2];
-            const today = new Date();
-            seeds.forEach((mult, i) => {
-                const d = new Date(today);
-                d.setDate(today.getDate() - (seeds.length - 1 - i));
-                const utcDate = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
-                const utcJan1 = Date.UTC(d.getFullYear(), 0, 1);
-                const dayNum = Math.floor((utcDate - utcJan1) / 86400000) + 1;
-                const done = Math.max(1, Math.round(dayNum * mult));
-                state.log.push({ count: done, ts: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9).getTime() });
-                state.yearTotal += done;
-            });
-            state.year = today.getFullYear();
-            saveState(state);
-            location.replace(location.pathname);
-        }
         const urlTotal = urlParams.get('total');
         if (urlTotal !== null && state.yearTotal === 0) {
             state.yearTotal = parseInt(urlTotal);
