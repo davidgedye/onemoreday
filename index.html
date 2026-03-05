@@ -159,10 +159,20 @@
             color: #666;
             font-size: 0.9rem;
         }
-        .stats .total {
+        .stats .total-number {
+            font-size: 5rem;
+            font-weight: 700;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--c-green) 0%, var(--c-green-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stats .total-label {
             font-size: 1.1rem;
             color: var(--c-gray);
             margin-top: 4px;
+            text-align: center;
         }
 
         .top-buttons {
@@ -294,7 +304,8 @@
     </div>
 
     <div class="stats">
-        <div class="total">Year total: <span id="year-total">0</span></div>
+        <div class="total-number" id="year-total">0</div>
+        <div class="total-label">Year total</div>
     </div>
 
     <div id="history-view">
@@ -307,7 +318,7 @@
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th>Expected</th>
+                        <th>For Par</th>
                         <th>Done</th>
                     </tr>
                 </thead>
@@ -315,8 +326,8 @@
             </table>
         </div>
         <div class="history-footer">
-            <button class="top-btn" id="backup-btn">↓ Backup</button>
-            <button class="top-btn" id="restore-btn">↑ Restore</button>
+            <button class="top-btn" id="backup-btn">↑ Backup</button>
+            <button class="top-btn" id="restore-btn">↓ Restore</button>
         </div>
     </div>
 
@@ -597,13 +608,14 @@
                 const date = new Date(y, m - 1, day);
                 const dayNum = dayOfYearFromDate(date);
                 const done = byDate[key];
-                cumDone += done;
                 const cumRequired = dayNum * (dayNum + 1) / 2;
+                const forPar = cumRequired - cumDone;
+                cumDone += done;
                 const dateStr = date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
                 const doneClass = cumDone >= cumRequired ? 'done-met' : 'done-behind';
                 return `<tr>
                     <td>${dateStr}</td>
-                    <td>${dayNum}</td>
+                    <td>${forPar}</td>
                     <td class="${doneClass}">${done}</td>
                 </tr>`;
             }).reverse().join('');
